@@ -62,12 +62,5 @@ async function getCategories() {
         }
     });
 }
-async function main() {
-await initialize();
-console.log(await getAllPosts());
-console.log(await getPublishedPosts());
-console.log(await getCategories());
 
-}
-
-main();
+module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories };
