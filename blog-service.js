@@ -8,9 +8,9 @@ async function initialize() {
         function post() {
             fs.readFile('./data/posts.json', 'utf8', (err, data) => {
                 if(err) reject('unable to read file');
-            posts = JSON.parse(data);
-            });
-            category();
+                posts = JSON.parse(data);
+                category();
+            });  
         }
         function category() {
             fs.readFile('./data/categories.json', 'utf8', (err, data) => {
