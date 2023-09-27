@@ -5,7 +5,7 @@
 * 
 *  Name: Devon Connelly Student ID: 105322218 Date: Sep. 27 2023
 *
-*  Online (Cyclic) Link: ________________________________________________________
+*  Online (Cyclic) Link: https://fair-ruby-bullfrog-gown.cyclic.cloud/about
 *
 ********************************************************************************/ 
 
@@ -14,6 +14,8 @@ const path = require('path');
 const express = require('express'); // "require" the Express module
 const app = express(); // obtain the "app" object
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
+
+app.use(express.static('public'));
 
 // start the server on the port and output a confirmation ot the console
 server.initialize()
