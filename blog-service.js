@@ -37,7 +37,7 @@ async function getAllPosts() {
 async function getPublishedPosts () {
     return new Promise((resolve, reject) => {
         if(posts.length != 0) {
-            var publishedPosts = [];
+            let publishedPosts = [];
             posts.forEach(post => {
                 if(post.published == true) {
                     publishedPosts.push(post);
@@ -63,4 +63,65 @@ async function getCategories() {
     });
 }
 
-module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories };
+async function addPost (postData){
+    return new Promise((resolve, reject) => {
+        if(!postData.published) {
+            postData.published = false;
+        }
+        else {
+            postData.published = true;
+        }
+        postData.id = posts.length + 1;
+        posts.push(postData);
+        resolve(postData);
+    });
+}
+
+async function getPostsByCategory(category) {
+    return new Promise ((resolve, reject) => {
+        let catPosts = [];
+        posts.forEach(post => {
+            if(post.category == category) {
+                catPosts.push(post);
+            }
+        });
+        if(catPosts.length != 0) {
+            resolve(catPosts);
+        }
+        else {
+            reject("no results returned");
+        }
+    });
+}
+
+async function getPostsByMinDate(minDateStr) {
+    return new Promise((resolve, reject) => {
+        let datePosts = [];
+        posts.forEach(post => {
+            if(new Date(post.postDate) >= new Date(minDateStr)) {
+                datePosts.push(post);
+            }
+        });
+        if(datePosts.length != 0) {
+            resolve(datePosts);
+        }
+        else {
+            reject("no results returned");
+        }
+    });
+}
+
+async function getPostById(id) {
+    return new Promise ((resolve, reject)=> {
+        let idPost;
+        posts.forEach(post => {
+            if(post.id == id) {
+                idPost = post;
+                resolve(idPost);
+            }
+        });
+        reject("no results returned");
+    });
+}
+
+module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories, addPost, getPostsByCategory, getPostsByMinDate, getPostById };

@@ -10,12 +10,24 @@
 ********************************************************************************/ 
 
 const server = require('./blog-service');
+const multer = require("multer");
+const cloudinary = require('cloudinary').v2
+const streamifier = require('streamifier')
 const path = require('path');
 const express = require('express'); // "require" the Express module
 const app = express(); // obtain the "app" object
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
 
 app.use(express.static('public'));
+
+cloudinary.config({
+  cloud_name: 'des6uotap',
+  api_key: '377357674115752',
+  api_secret: '2MfUcVMCkqbw2z3KIiQPc4bMPe4',
+  secure: true
+});
+
+const upload = multer(); 
 
 // start the server on the port and output a confirmation ot the console
 server.initialize()
@@ -46,6 +58,25 @@ server.initialize()
   });
 
   app.get('/posts', (req, res) => {
+    if(req.query.category) {
+      server.getPostsByCategory(req.query.category)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((err) => {
+        res.send({"message": err});
+      });
+    }
+    else if(req.query.minDate) {
+      server.getPostsByMinDate(req.query.minDate)
+      .then((data) => {
+        res.json(data);
+      })
+      .catch((err) => {
+        res.send({"message": err});
+      });
+    }
+    else {
      server.getAllPosts()
       .then((data) => {
         res.json(data);
@@ -53,6 +84,17 @@ server.initialize()
       .catch((err) => {
         res.send({"message": err});
       });
+    }
+  });
+
+  app.get('/posts/:value', (req, res) => {
+    server.getPostById(req.params.value)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.send({"message": err});
+    });
   });
 
   app.get('/categories', (req, res) => {
@@ -63,6 +105,44 @@ server.initialize()
       .catch((err) => {
         res.send({"message": err});
       });
+  });
+
+  app.get('/posts/add', (req, res) => {
+    res.sendFile(path.join(__dirname, '/views/addPost.html'));
+  });
+
+  app.post('/posts/add', upload.single("featureImage"), (req, res) => {
+    let streamUpload = (req) => {
+      return new Promise((resolve, reject) => {
+          let stream = cloudinary.uploader.upload_stream(
+              (error, result) => {
+              if (result) {
+                  resolve(result);
+              } else {
+                  reject(error);
+              }
+              }
+          );
+  
+          streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+  };
+  
+  async function upload(req) {
+      let result = await streamUpload(req);
+      console.log(result);
+      return result;
+  }
+  
+  upload(req).then((uploaded)=>{
+      req.body.featureImage = uploaded.url;
+      server.addPost(req.body).then(() => {
+      res.redirect('/posts');
+      });
+      // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
+      
+  });
+  
   });
 
   app.use((req, res) => {
