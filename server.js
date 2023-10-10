@@ -87,16 +87,6 @@ server.initialize()
     }
   });
 
-  app.get('/posts/:value', (req, res) => {
-    server.getPostById(req.params.value)
-    .then((data) => {
-      res.json(data);
-    })
-    .catch((err) => {
-      res.send({"message": err});
-    });
-  });
-
   app.get('/categories', (req, res) => {
     server.getCategories()
       .then((data) => {
@@ -139,12 +129,20 @@ server.initialize()
       server.addPost(req.body).then(() => {
       res.redirect('/posts');
       });
-      // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
-      
   });
   
   });
 
+  app.get('/posts/:value', (req, res) => {
+    server.getPostById(req.params.value)
+    .then((data) => {
+      res.json(data);
+    })
+    .catch((err) => {
+      res.send({"message": err});
+    });
+  });
+  
   app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'views/404.html'));
   });
