@@ -91,7 +91,7 @@ async function addPost (postData){
         }
         postData.id = posts.length + 1;
         let newDate = new Date();
-        postData.postDate = `${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDay()}`;
+        postData.postDate = `${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDate()}`;
         posts.push(postData);
         resolve(postData);
     });
