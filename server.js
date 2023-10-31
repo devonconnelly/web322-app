@@ -5,7 +5,7 @@
 * 
 *  Name: Devon Connelly Student ID: 105322218 Date: Oct. 31 2023
 *
-*  Online (Cyclic) Link: https://fair-ruby-bullfrog-gown.cyclic.cloud/about
+*  Online (Cyclic) Link: https://fair-ruby-bullfrog-gown.cyclic.cloud/blog
 *
 ********************************************************************************/ 
 
