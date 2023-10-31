@@ -52,6 +52,24 @@ async function getPublishedPosts () {
     });
 }
 
+async function getPublishedPostsByCategory(category) {
+    return new Promise((resolve, reject) => {
+        if(posts.length != 0) {
+            let publishedPosts = [];
+            posts.forEach(post => {
+                if(post.published == true && post.category == category) {
+                    publishedPosts.push(post);
+                }
+                
+            });
+            resolve(publishedPosts);
+        }
+        else {
+            reject('no results returned');
+        }
+    });
+}
+
 async function getCategories() {
     return new Promise((resolve, reject) => {
         if(categories.length != 0) {
@@ -72,6 +90,8 @@ async function addPost (postData){
             postData.published = true;
         }
         postData.id = posts.length + 1;
+        let newDate = new Date();
+        postData.postDate = `${newDate.getFullYear()}-${newDate.getMonth() + 1}-${newDate.getDay()}`;
         posts.push(postData);
         resolve(postData);
     });
@@ -124,4 +144,4 @@ async function getPostById(id) {
     });
 }
 
-module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories, addPost, getPostsByCategory, getPostsByMinDate, getPostById };
+module.exports = { initialize, getAllPosts, getPublishedPosts, getCategories, addPost, getPostsByCategory, getPostsByMinDate, getPostById, getPublishedPostsByCategory };
