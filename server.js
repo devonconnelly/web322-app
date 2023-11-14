@@ -19,6 +19,7 @@ const streamifier = require('streamifier')
 const stripJs = require('strip-js');
 const path = require('path');
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
+
 app.engine('hbs', exphbs.engine({
   extname: '.hbs', 
   helpers: {
@@ -38,11 +39,18 @@ app.engine('hbs', exphbs.engine({
   },
   safeHTML: function(context){
   return stripJs(context);
+  },
+  formatDate: function(dateObj){
+    let year = dateObj.getFullYear();
+    let month = (dateObj.getMonth() + 1).toString();
+    let day = dateObj.getDate().toString();
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
   }
 }
 }));
 app.set('view engine', 'hbs');
 app.use(express.static('public'));
+app.use(express.urlencoded({extended: true}));
 
 cloudinary.config({
   cloud_name: 'des6uotap',
@@ -181,7 +189,12 @@ app.get('/blog/:id', async (req, res) => {
     if(req.query.category) {
       server.getPostsByCategory(req.query.category)
       .then((data) => {
-        res.render("posts", {posts: data});
+        if(data.length > 0) {
+          res.render("posts", {posts: data});
+        } 
+        else {
+          res.render("posts", {message: "no results"});
+        }
       })
       .catch((err) => {
         res.render("posts", {message: "no results"});
@@ -190,7 +203,12 @@ app.get('/blog/:id', async (req, res) => {
     else if(req.query.minDate) {
       server.getPostsByMinDate(req.query.minDate)
       .then((data) => {
-        res.render("posts", {posts: data});
+        if(data.length > 0) {
+          res.render("posts", {posts: data});
+        } 
+        else {
+          res.render("posts", {message: "no results"});
+        }
       })
       .catch((err) => {
         res.render("posts", {message: "no results"});
@@ -199,7 +217,12 @@ app.get('/blog/:id', async (req, res) => {
     else {
      server.getAllPosts()
       .then((data) => {
-        res.render("posts", {posts: data});
+        if(data.length > 0) {
+          res.render("posts", {posts: data});
+        } 
+        else {
+          res.render("posts", {message: "no results"});
+        }
       })
       .catch((err) => {
         res.render("posts", {message: "no results"});
@@ -210,11 +233,36 @@ app.get('/blog/:id', async (req, res) => {
   app.get('/categories', (req, res) => {
     server.getCategories()
       .then((data) => {
-        res.render("categories", {categories: data});
+        if(data.length > 0) {
+          res.render("categories", {categories: data});
+        }
+        else {
+          res.render("categories", {message: "no results"});
+        }
       })
       .catch((err) => {
         res.render("categories", {message: "no results"});
       });
+  });
+
+  app.get('/categories/add', (req, res) => {
+    res.render('addCategory', { body: 'addCategory'})
+  });
+
+  app.post('/categories/add', (req, res) => {
+    server.addCategory(req.body).then(() => {
+      res.redirect('/categories');
+      });
+  });
+
+  app.get('/categories/delete/:id', (req, res) => {
+    server.deleteCategoryById(req.params.id)
+    .then(() => {
+      res.redirect('/categories');
+    })
+    .catch(() => {
+      res.status(500).send("Unable to Remove Category / Category not found");
+    });
   });
 
   app.get('/posts/add', (req, res) => {
@@ -236,7 +284,7 @@ app.get('/blog/:id', async (req, res) => {
   
           streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
-  };
+    };
   
   async function upload(req) {
       let result = await streamUpload(req);
@@ -260,6 +308,16 @@ app.get('/blog/:id', async (req, res) => {
     })
     .catch((err) => {
       res.send({"message": err});
+    });
+  });
+
+  app.get('/posts/delete/:id', (req, res) => {
+    server.deletePostById(req.params.id)
+    .then(() => {
+      res.redirect('/posts');
+    })
+    .catch(() => {
+      res.status(500).send("Unable to Remove Post / Post not found");
     });
   });
   
