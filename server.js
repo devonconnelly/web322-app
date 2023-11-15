@@ -1,9 +1,9 @@
 /*********************************************************************************
-*  WEB322 – Assignment 04
+*  WEB322 – Assignment 05
 *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source 
 *  (including 3rd party web sites) or distributed to other students.
 * 
-*  Name: Devon Connelly Student ID: 105322218 Date: Oct. 31 2023
+*  Name: Devon Connelly Student ID: 105322218 Date: Nov. 15 2023
 *
 *  Online (Cyclic) Link: https://fair-ruby-bullfrog-gown.cyclic.cloud/blog
 *
@@ -173,7 +173,7 @@ app.get('/blog/:id', async (req, res) => {
 
   try{
       // Obtain the full list of "categories"
-      let categories = await blogData.getCategories();
+      let categories = await server.getCategories();
 
       // store the "categories" data in the viewData object (to be passed to the view)
       viewData.categories = categories;
