@@ -197,7 +197,7 @@ app.get('/blog/:id', async (req, res) => {
         }
       })
       .catch((err) => {
-        res.render("posts", {message: "no results"});
+        res.send("posts", {message: "no results"});
       });
     }
     else if(req.query.minDate) {
@@ -266,7 +266,13 @@ app.get('/blog/:id', async (req, res) => {
   });
 
   app.get('/posts/add', (req, res) => {
-    res.render('addPost', { body: 'addPost'});
+    server.getCategories()
+    .then((data) => {
+      res.render("addPost", {categories: data});
+    })
+    .catch(() => {
+      res.render("addPost", {categories: []}); 
+    });
   });
 
   app.post('/posts/add', upload.single("featureImage"), (req, res) => {

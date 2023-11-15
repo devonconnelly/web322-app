@@ -14,7 +14,7 @@ const Post = sequelize.define('Post', {
     title: Sequelize.STRING,
     postDate: Sequelize.DATE,
     featureImage:Sequelize.STRING,
-    published: Sequelize.BOOLEAN
+    published: Sequelize.BOOLEAN,
 });
 
 const Category = sequelize.define('Category', {
@@ -42,6 +42,7 @@ async function getAllPosts() {
             resolve(data);
         })
         .catch((error) => {
+            console.log(error);
             reject("no results returned");
         });
 });
@@ -100,18 +101,23 @@ async function addPost (postData){
                 prop = null;
             }
         }
+        if(!postData.category) {
+            postData.category = null;
+        }
         postData.postDate = new Date();
         Post.create({
             body: postData.body,
             title: postData.title,
             postDate: postData.postDate,
             featureImage: postData.featureImage,
-            published: postData.published
+            published: postData.published,
+            category: postData.category
         })
         .then((data) => {
             resolve(data);
         })
         .catch((error) => {
+            console.log(error);
             reject("unable to create post");
         });
     });
