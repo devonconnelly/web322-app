@@ -18,7 +18,10 @@ const cloudinary = require('cloudinary').v2
 const streamifier = require('streamifier')
 const stripJs = require('strip-js');
 const path = require('path');
+const authData = require('./auth-service');
+const clientSessions = require('client-sessions');
 const HTTP_PORT = process.env.PORT || 8080; // assign a port
+
 
 app.engine('hbs', exphbs.engine({
   extname: '.hbs', 
@@ -45,9 +48,17 @@ app.engine('hbs', exphbs.engine({
     let month = (dateObj.getMonth() + 1).toString();
     let day = dateObj.getDate().toString();
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2,'0')}`;
-  }
+  },
 }
 }));
+
+function ensureLogin(req, res, next) {
+  if (!req.session.user) {
+    res.redirect('/login');
+  } else {
+    next();
+  }
+}
 app.set('view engine', 'hbs');
 app.use(express.static('public'));
 app.use(express.urlencoded({extended: true}));
@@ -63,12 +74,27 @@ const upload = multer();
 
 // start the server on the port and output a confirmation ot the console
 server.initialize()
+  .then(authData.initialize)
   .then(() =>  { 
     app.listen(HTTP_PORT, () => console.log(`server listening on: ${HTTP_PORT}`)); 
   })
   .catch(() => {
     console.log("error initializing files");
   });
+
+  app.use(clientSessions({
+    cookieName: 'session', 
+    secret: 'o6LjQ5EVNC28ZgK64hDELM18ScpFQr', 
+    duration: 2 * 60 * 1000, 
+    activeDuration: 1000 * 60, 
+    })
+  );
+
+  app.use((req, res, next) => {
+    res.locals.session = req.session;
+    next();
+  });
+  
 
   app.use(express.static('public')); 
 
@@ -185,7 +211,7 @@ app.get('/blog/:id', async (req, res) => {
   res.render("blog", {data: viewData})
 });
 
-  app.get('/posts', (req, res) => {
+  app.get('/posts', ensureLogin, (req, res) => {
     if(req.query.category) {
       server.getPostsByCategory(req.query.category)
       .then((data) => {
@@ -230,7 +256,7 @@ app.get('/blog/:id', async (req, res) => {
     }
   });
 
-  app.get('/categories', (req, res) => {
+  app.get('/categories', ensureLogin, (req, res) => {
     server.getCategories()
       .then((data) => {
         if(data.length > 0) {
@@ -245,17 +271,17 @@ app.get('/blog/:id', async (req, res) => {
       });
   });
 
-  app.get('/categories/add', (req, res) => {
+  app.get('/categories/add', ensureLogin, (req, res) => {
     res.render('addCategory', { body: 'addCategory'})
   });
 
-  app.post('/categories/add', (req, res) => {
+  app.post('/categories/add', ensureLogin, (req, res) => {
     server.addCategory(req.body).then(() => {
       res.redirect('/categories');
       });
   });
 
-  app.get('/categories/delete/:id', (req, res) => {
+  app.get('/categories/delete/:id', ensureLogin, (req, res) => {
     server.deleteCategoryById(req.params.id)
     .then(() => {
       res.redirect('/categories');
@@ -265,7 +291,7 @@ app.get('/blog/:id', async (req, res) => {
     });
   });
 
-  app.get('/posts/add', (req, res) => {
+  app.get('/posts/add', ensureLogin, (req, res) => {
     server.getCategories()
     .then((data) => {
       res.render("addPost", {categories: data});
@@ -275,7 +301,7 @@ app.get('/blog/:id', async (req, res) => {
     });
   });
 
-  app.post('/posts/add', upload.single("featureImage"), (req, res) => {
+  app.post('/posts/add', ensureLogin, upload.single("featureImage"), (req, res) => {
     let streamUpload = (req) => {
       return new Promise((resolve, reject) => {
           let stream = cloudinary.uploader.upload_stream(
@@ -307,7 +333,7 @@ app.get('/blog/:id', async (req, res) => {
   
   });
 
-  app.get('/posts/:value', (req, res) => {
+  app.get('/posts/:value', ensureLogin, (req, res) => {
     server.getPostById(req.params.value)
     .then((data) => {
       res.json(data);
@@ -317,7 +343,7 @@ app.get('/blog/:id', async (req, res) => {
     });
   });
 
-  app.get('/posts/delete/:id', (req, res) => {
+  app.get('/posts/delete/:id', ensureLogin, (req, res) => {
     server.deletePostById(req.params.id)
     .then(() => {
       res.redirect('/posts');
@@ -326,7 +352,50 @@ app.get('/blog/:id', async (req, res) => {
       res.status(500).send("Unable to Remove Post / Post not found");
     });
   });
+
+  app.get('/login', (req, res) => {
+    res.render("login");
+  });
+
+  app.get('/register', (req, res) => {
+    res.render("register");
+  });
+
+  app.post('/register', (req, res) => {
+    authData.registerUser(req.body)
+    .then(() => {
+      res.render("register", {successMessage: "User created"});
+    })
+    .catch((err) => {
+      res.render("register", {errorMessage: err, userName: req.body.userName});
+    });
+  });
+
+  app.post('/login', (req, res) => {
+    req.body.userAgent = req.get('User-Agent');
+    authData.checkUser(req.body).then((user) => {
+      req.session.user = {
+          userName: user.userName,
+          email: user.email,
+          loginHistory: user.loginHistory,
+      }
+      res.redirect('/posts');
+    })
+    .catch((err) => {
+      res.render("login", {errorMessage: err, userName: req.body.userName});
+    });
   
+  });
+  
+  app.get('/logout', (req, res) => {
+    req.session.reset();
+    res.redirect('/');
+  });
+
+  app.get('/userHistory', ensureLogin, (req, res) => {
+    res.render("userHistory");
+  });
+
   app.use((req, res) => {
     res.status(404).render('404', {body: '404'});
   });
