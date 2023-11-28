@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 let userSchema = new Schema({
@@ -33,7 +34,9 @@ async function registerUser(userData) {
             .then((data) => {
                 if(data.length === 0) {
                     let newUser = new User(userData);
-                    newUser.save()
+                    bcrypt.hash(newUser.password, 10).then((hash) => {
+                        newUser.password = hash;
+                        newUser.save()
                     .then(() => {
                         resolve();
                     })
@@ -43,6 +46,10 @@ async function registerUser(userData) {
                         } else {
                             reject("There was an error creating the user: " + err );
                         }
+                    });
+                    })
+                    .catch(() => {
+                        reject("There was an error encrypting the password");
                     });
                 } else {
                     reject("User name already taken");
@@ -62,11 +69,12 @@ async function checkUser(userData) {
             if(users.length == 0) {
                 reject("Unable to find user: " + user );
             }
-            if(users[0].password != userData.password) {
-                reject("Incorrect Password for user: " + userName );
-            } 
-            else {
-                users[0].loginHistory.push({dateTime: (new Date()).toString(), userAgent: userData.userAgent});
+            bcrypt.compare(userData.password, users[0].password).then((result) => {
+                if(!result) {
+                    reject("Incorrect Password for user: " + userData.userName );
+                }
+                else {
+                    users[0].loginHistory.push({dateTime: (new Date()).toString(), userAgent: userData.userAgent});
                 User.updateOne(
                     { userName: users[0].userName }, 
                     { $set: { loginHistory: users[0].loginHistory } }
@@ -77,8 +85,8 @@ async function checkUser(userData) {
                   .catch((err) => {
                     reject("There was an error verifying the user: " + err);
                   });
-                
-            }
+                }
+             });             
         })
         .catch(() => {
             reject("Unable to find user: " + userData.userName);
